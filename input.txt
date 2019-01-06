@@ -1,0 +1,9 @@
+currency eur (you can switch between eur and usd here)
+
+btc 1.0
+eth 20.0
+stellar 1000
+xmr 30
+eos 100
+iota 500
+bitcoin-cash 5
