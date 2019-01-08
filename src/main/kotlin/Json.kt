@@ -3,14 +3,6 @@ import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import java.net.URL
 
-class Token(
-    val name: String,
-    val symbol: String,
-    val valueInEuro: Double,
-    val balance: Double,
-    val balanceInEuro: Double
-)
-
 class Json {
 
     /**
@@ -60,7 +52,7 @@ class Json {
 
         val jsonArray = getKlaxonJsonArray("https://api.coinmarketcap.com/v1/ticker/")
 
-        var tokenBalance = arrayListOf<Token>()
+        val tokenBalance = arrayListOf<Token>()
         for (item in currentBalance) {
             val token = getToken(jsonArray, item.first)
             token?.let {

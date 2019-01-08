@@ -18,15 +18,15 @@ class ChartView : View() {
     init {
         with(root) {
 
-            piechart ("Balance in " + controller.currencyName){
+            piechart("Balance in " + controller.currencyName) {
                 for (item in controller.coinValues) {
-                    data(item.name, item.balanceInEuro)
+                    data(item.name, item.balanceInEuroOrUSD)
                 }
             }
             barchart("", CategoryAxis(), NumberAxis()) {
                 series("Balance in " + controller.currencyName) {
                     for (item in controller.coinValues) {
-                        data(item.name, item.balanceInEuro)
+                        data(item.name, item.balanceInEuroOrUSD)
                     }
                 }
                 /*
@@ -48,18 +48,26 @@ class ChartView : View() {
 /**
  * The table displayed in the program is declared in this class.
  */
-class BalanceTableView : View() {
+class BalanceTableAndTotalBalanceView : View() {
     private val controller: BalanceController by inject()
     private val customViewModel: CustomViewModel by inject()
 
-    override val root = tableview(customViewModel.token) {
-        readonlyColumn("Name", Token::name).fixedWidth(80)
-        readonlyColumn("Symbol", Token::symbol).fixedWidth(80)
-        readonlyColumn("Value in " + controller.currencyName, Token::valueInEuro).fixedWidth(130)
-        readonlyColumn("Balance", Token::balance).fixedWidth(80)
-        readonlyColumn("Balance in " + controller.currencyName, Token::balanceInEuro).fixedWidth(130)
+    override val root = borderpane{
 
-        minWidth = 500.0
+        center = tableview(customViewModel.token) {
+            readonlyColumn("Name", Token::name).fixedWidth(80)
+            readonlyColumn("Symbol", Token::symbol).fixedWidth(80)
+            readonlyColumn("Value in ${controller.currencyName}", Token::valueInEuro).fixedWidth(130)
+            readonlyColumn("Balance", Token::balance).fixedWidth(80)
+            readonlyColumn("Balance in ${controller.currencyName}", Token::balanceInEuroOrUSD).fixedWidth(130)
+            minWidth = 500.0
+            paddingLeft = 10.0
+        }
+
+        bottom = stackpane {
+            label("total balance: ${controller.totalBalance} ${controller.currencyName}")
+            paddingAll = 20.0
+        }
 
     }
 
@@ -72,8 +80,9 @@ class ProgressBarView : View() {
     private val status: TaskStatus by inject()
 
     override val root = StackPane()
+
     init {
-        with(root){
+        with(root) {
             progressbar(status.progress)
             label(status.message)
         }
@@ -86,7 +95,7 @@ class ProgressBarView : View() {
  */
 class MainDisplayView : View() {
     override val root = borderpane {
-        left<BalanceTableView>()
+        left<BalanceTableAndTotalBalanceView>()
         center<ChartView>()
     }
 }
@@ -106,6 +115,7 @@ class CustomViewModel : ItemViewModel<Token>() {
 
             controller.coinValues.clear()
             controller.coinValues = controller.loadCoinValues()
+            controller.totalBalance = controller.calculateTotalBalance(controller.coinValues)
         } ui {
             token.set(controller.coinValues.observable())
             mainView.replaceContent()
