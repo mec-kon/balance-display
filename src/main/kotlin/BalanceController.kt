@@ -1,4 +1,5 @@
 import tornadofx.Controller
+import java.io.FileNotFoundException
 
 class Token(
     val name: String,
@@ -10,15 +11,23 @@ class Token(
 
 class BalanceController : Controller() {
     private val file: InputFile = InputFile()
-    private val inputData = file.inputData
+    private var inputData: Pair<String, ArrayList<Pair<String, Double>>>
     private val json = Json()
     private var usdIsUsed: Boolean
+    var inputFileNotFound = false
     var currencyName: String
     var coinValues = arrayListOf<Token>()
     var totalBalance = 0.0
 
     init {
-        if (inputData.first.equals("usd", true)) {
+        inputData = try {
+            file.getBalanceFromInput()
+        } catch (exception: Exception) {
+            inputFileNotFound = true
+            Pair("usd", arrayListOf())
+        }
+
+        if (inputData.first.equals("usd", ignoreCase = true)) {
             currencyName = "USD"
             usdIsUsed = true
 
@@ -28,7 +37,16 @@ class BalanceController : Controller() {
         }
     }
 
-    fun loadCoinValues(): ArrayList<Token> {
+    fun refresh() {
+        if (inputFileNotFound){
+            throw FileNotFoundException("ile input.txt not found!")
+        }
+        coinValues.clear()
+        coinValues = loadCoinValues()
+        totalBalance = calculateTotalBalance(coinValues)
+    }
+
+    private fun loadCoinValues(): ArrayList<Token> {
         coinValues = if (usdIsUsed) {
             json.getCoinValuesInUSD(inputData.second)
         } else {
@@ -39,12 +57,12 @@ class BalanceController : Controller() {
         return coinValues
     }
 
-    fun calculateTotalBalance(coinValues: ArrayList<Token>): Double {
+    private fun calculateTotalBalance(coinValues: ArrayList<Token>): Double {
         var totalBalance = 0.0
-        for (token in coinValues){
+        for (token in coinValues) {
             totalBalance += token.balanceInEuroOrUSD
         }
-        return totalBalance
+        return Math.round(totalBalance * 100.0) / 100.0
     }
 
 }

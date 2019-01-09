@@ -1,6 +1,8 @@
 import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
-import com.beust.klaxon.Parser
+import com.beust.klaxon.Klaxon
+import java.io.StringReader
+import java.lang.Exception
 import java.net.URL
 
 class Json {
@@ -9,10 +11,13 @@ class Json {
      * In this method, a json string is loaded from a web page and then parsed into a klaxon json array.
      */
     private fun getKlaxonJsonArray(apiAddress: String): JsonArray<JsonObject> {
+
         val url: String = URL(apiAddress).readText()
-        val parser = Parser()
-        val stringBuilder = StringBuilder(url)
-        return parser.parse(stringBuilder) as JsonArray<JsonObject>
+        val klaxon = Klaxon()
+        val parsed = klaxon.parseJsonArray(StringReader(url))
+
+        return parsed as JsonArray<JsonObject>
+
     }
 
     /**
@@ -41,7 +46,7 @@ class Json {
                 val name = it["name"] as String
                 val symbol = it["symbol"] as String
                 val valueInEuro = (it["price_eur"] as String).toDouble()
-                val balanceInEuro = item.second * valueInEuro
+                val balanceInEuro = Math.round(item.second * valueInEuro * 100.0) / 100.0
                 tokenBalance.add(Token(name, symbol, valueInEuro, item.second, balanceInEuro))
             }
         }
@@ -59,7 +64,7 @@ class Json {
                 val name = it["name"] as String
                 val symbol = it["symbol"] as String
                 val valueInUSD = (it["price_usd"] as String).toDouble()
-                val balanceInUSD = item.second * valueInUSD
+                val balanceInUSD = Math.round(item.second * valueInUSD * 100.0) / 100.0
                 tokenBalance.add(Token(name, symbol, valueInUSD, item.second, balanceInUSD))
             }
         }

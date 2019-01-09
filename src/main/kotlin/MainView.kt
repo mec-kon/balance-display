@@ -5,6 +5,9 @@ import javafx.scene.chart.NumberAxis
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import tornadofx.*
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.lang.Exception
 
 
 /**
@@ -18,24 +21,24 @@ class ChartView : View() {
     init {
         with(root) {
 
-            piechart("Balance in " + controller.currencyName) {
+            piechart("Balance in ${controller.currencyName}") {
                 for (item in controller.coinValues) {
                     data(item.name, item.balanceInEuroOrUSD)
                 }
             }
             barchart("", CategoryAxis(), NumberAxis()) {
-                series("Balance in " + controller.currencyName) {
+                series("Balance in ${controller.currencyName}") {
                     for (item in controller.coinValues) {
                         data(item.name, item.balanceInEuroOrUSD)
                     }
                 }
-                /*
+
                 series("Balance in coins") {
                     for (item in controller.coinValues) {
                         data(item.name, item.balance)
                     }
                 }
-                */
+
             }
 
             minWidth = 500.0
@@ -52,14 +55,14 @@ class BalanceTableAndTotalBalanceView : View() {
     private val controller: BalanceController by inject()
     private val customViewModel: CustomViewModel by inject()
 
-    override val root = borderpane{
+    override val root = borderpane {
 
         center = tableview(customViewModel.token) {
-            readonlyColumn("Name", Token::name).fixedWidth(80)
+            readonlyColumn("Name", Token::name).fixedWidth(100)
             readonlyColumn("Symbol", Token::symbol).fixedWidth(80)
             readonlyColumn("Value in ${controller.currencyName}", Token::valueInEuro).fixedWidth(130)
             readonlyColumn("Balance", Token::balance).fixedWidth(80)
-            readonlyColumn("Balance in ${controller.currencyName}", Token::balanceInEuroOrUSD).fixedWidth(130)
+            readonlyColumn("Balance in ${controller.currencyName}", Token::balanceInEuroOrUSD).fixedWidth(110)
             minWidth = 500.0
             paddingLeft = 10.0
         }
@@ -90,6 +93,20 @@ class ProgressBarView : View() {
 }
 
 /**
+ * This view is displayed if there is an error while loading the json string
+ */
+class FailView : View() {
+    override val root = StackPane()
+
+    fun connectionError() {
+        root.add(label("Connection error: Please check your internet connection or try again later."))
+    }
+    fun inputError() {
+        root.add(label("File input.txt not found!"))
+    }
+}
+
+/**
  * This is the view displayed after the loading screen.
  * It displays the table and charts.
  */
@@ -107,20 +124,28 @@ class MainDisplayView : View() {
 class CustomViewModel : ItemViewModel<Token>() {
     private val controller: BalanceController by inject()
     private val mainView: MainView by inject()
+    private val mainDisplayView: MainDisplayView by inject()
+    private val failView: FailView by inject()
     val token = SimpleObjectProperty<ObservableList<Token>>()
 
     fun refresh() {
         runAsync {
             updateMessage("loading...")
-
-            controller.coinValues.clear()
-            controller.coinValues = controller.loadCoinValues()
-            controller.totalBalance = controller.calculateTotalBalance(controller.coinValues)
+            controller.refresh()
         } ui {
             token.set(controller.coinValues.observable())
-            mainView.replaceContent()
+            mainView.root.replaceChildren(mainDisplayView)
+        } fail {
+            if (controller.inputFileNotFound) {
+                failView.inputError()
+            } else {
+                failView.connectionError()
+
+            }
+            mainView.root.replaceChildren(failView)
         }
     }
+
 
 }
 
@@ -132,7 +157,6 @@ class CustomViewModel : ItemViewModel<Token>() {
 class MainView : View(title = "balance display") {
 
     private val progressBarView: ProgressBarView by inject()
-    private val mainDisplayView: MainDisplayView by inject()
     private val customViewModel: CustomViewModel by inject()
 
     override val root = StackPane()
@@ -140,11 +164,6 @@ class MainView : View(title = "balance display") {
     init {
         root += progressBarView
         customViewModel.refresh()
-    }
-
-    fun replaceContent() {
-
-        root.replaceChildren(mainDisplayView)
     }
 
 }

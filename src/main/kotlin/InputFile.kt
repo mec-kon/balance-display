@@ -1,12 +1,11 @@
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.*
 import kotlin.collections.ArrayList
 
 class InputFile {
 
-    val inputData = getBalanceFromInput()
-
-    private fun getBalanceFromInput(): Pair<String, ArrayList<Pair<String, Double>>> {
+    fun getBalanceFromInput(): Pair<String, ArrayList<Pair<String, Double>>> {
         return try {
             val inputFile = File("input.txt")
             val scanner = Scanner(inputFile)
@@ -26,8 +25,7 @@ class InputFile {
             }
             Pair(currency, innerBalance)
         } catch (e: Exception) {
-            println("file input.txt not found!")
-            Pair("usd", arrayListOf())
+            throw FileNotFoundException("file input.txt not found!")
         }
 
     }
