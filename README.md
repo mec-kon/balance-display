@@ -20,8 +20,11 @@ As build management automation tool gradle is used in this project.
 
 Installation
 --------
-A java installation is required for the program to work.
+You can download a ready-to-use project folder from https://github.com/mec-kon/balance-display/releases.
+This only needs to be unzipped.
 To start the program just double click on the .jar file or enter ```java -jar BalanceDisplay-1.1-SNAPSHOT.jar``` in the terminal.
+
+A java installation is required for the program to work.
 
 Pull requests
 --------
