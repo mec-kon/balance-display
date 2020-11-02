@@ -2,7 +2,6 @@ import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import java.io.StringReader
-import java.lang.Exception
 import java.net.URL
 
 class Json {
@@ -21,53 +20,58 @@ class Json {
     }
 
     /**
-     * This method returns a json object that has the name or symbol you are searching for
+     * In this method, a json string is loaded from a web page and then parsed into a klaxon json object.
      */
-    private fun getToken(jsonArray: JsonArray<JsonObject>, symbolOrName: String): JsonObject? {
-        for (item in jsonArray) {
-            if ((item["symbol"] as String).equals(symbolOrName, ignoreCase = true)
-                || (item["name"] as String).equals(symbolOrName, ignoreCase = true)
-                || (item["id"] as String).equals(symbolOrName, ignoreCase = true)
-            ) {
-                return item
-            }
-        }
-        return null
+    private fun getKlaxonJsonObject(apiAddress: String): JsonObject {
+
+        val url: String = URL(apiAddress).readText()
+        val klaxon = Klaxon()
+
+        return klaxon.parseJsonObject(StringReader(url))
+
     }
 
-    fun getCoinValuesInEuro(currentBalance: ArrayList<Pair<String, Double>>): ArrayList<Token> {
-
-        val jsonArray = getKlaxonJsonArray("https://api.coinmarketcap.com/v1/ticker/?convert=EUR")
-
-        var tokenBalance = arrayListOf<Token>()
-        for (item in currentBalance) {
-            val token = getToken(jsonArray, item.first)
-            token?.let {
-                val name = it["name"] as String
-                val symbol = it["symbol"] as String
-                val valueInEuro = (it["price_eur"] as String).toDouble()
-                val balanceInEuro = Math.round(item.second * valueInEuro * 100.0) / 100.0
-                tokenBalance.add(Token(name, symbol, valueInEuro, item.second, balanceInEuro))
+    /**
+    * This method returns a Token object list with names and symbols
+    */
+    fun addNameSymbolAndIdToTokenList(tokenList: ArrayList<Token>): ArrayList<Token> {
+        val jsonArray = getKlaxonJsonArray("https://api.coingecko.com/api/v3/coins/list")
+        for (item in jsonArray){
+            for (token in tokenList){
+                if ((item["symbol"] as String).equals(token.name, ignoreCase = true)
+                        || (item["name"] as String).equals(token.name, ignoreCase = true)
+                        || (item["id"] as String).equals(token.name, ignoreCase = true)
+                ){
+                    token.name = item["name"] as String
+                    token.symbol = item["symbol"] as String
+                    token.id = item["id"] as String
+                }
             }
         }
-        return tokenBalance
+        return tokenList
     }
 
-    fun getCoinValuesInUSD(currentBalance: ArrayList<Pair<String, Double>>): ArrayList<Token> {
+    fun addCoinValuesInEUR(tokenList: ArrayList<Token>): ArrayList<Token> {
+        val apiLink = "https://api.coingecko.com/api/v3/simple/price?vs_currencies=eur&ids="
 
-        val jsonArray = getKlaxonJsonArray("https://api.coinmarketcap.com/v1/ticker/")
-
-        val tokenBalance = arrayListOf<Token>()
-        for (item in currentBalance) {
-            val token = getToken(jsonArray, item.first)
-            token?.let {
-                val name = it["name"] as String
-                val symbol = it["symbol"] as String
-                val valueInUSD = (it["price_usd"] as String).toDouble()
-                val balanceInUSD = Math.round(item.second * valueInUSD * 100.0) / 100.0
-                tokenBalance.add(Token(name, symbol, valueInUSD, item.second, balanceInUSD))
-            }
+        for(token in tokenList){
+            val jsonObject = getKlaxonJsonObject(apiLink+token.id)
+            val price = jsonObject[token.id] as JsonObject
+            token.priceInEUR = price["eur"] as Double
         }
-        return tokenBalance
+
+        return tokenList
+    }
+
+    fun addCoinValuesInUSD(tokenList: ArrayList<Token>): ArrayList<Token> {
+        val apiLink = "https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids="
+
+        for(token in tokenList){
+            val jsonObject = getKlaxonJsonObject(apiLink+token.id)
+            val price = jsonObject[token.id] as JsonObject
+            token.priceInUSD = price["usd"] as Double
+        }
+
+        return tokenList
     }
 }

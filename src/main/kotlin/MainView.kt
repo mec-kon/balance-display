@@ -5,9 +5,6 @@ import javafx.scene.chart.NumberAxis
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import tornadofx.*
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.lang.Exception
 
 
 /**
@@ -21,31 +18,45 @@ class ChartView : View() {
     init {
         with(root) {
 
-            piechart("Balance in ${controller.currencyName}") {
-                for (item in controller.coinValues) {
-                    data(item.name, item.balanceInEuroOrUSD)
+            piechart() {
+
+                title = if (controller.usdIsUsed){
+                    for (item in controller.tokenList) {
+                        data(item.name, item.balanceInUSD)
+                    }
+                    "Dollar"
+                } else{
+                    for (item in controller.tokenList) {
+                        data(item.name, item.balanceInEUR)
+                    }
+                    "Euro"
                 }
             }
             barchart("", CategoryAxis(), NumberAxis()) {
-                series("Balance in ${controller.currencyName}") {
-                    for (item in controller.coinValues) {
-                        data(item.name, item.balanceInEuroOrUSD)
+                series("") {
+                    name = if (controller.usdIsUsed) {
+                        for (item in controller.tokenList) {
+                            data(item.name, item.balanceInUSD)
+                        }
+                        "Dollar"
+                    } else {
+                        for (item in controller.tokenList) {
+                            data(item.name, item.balanceInEUR)
+                        }
+                        "Euro"
                     }
                 }
 
                 series("Balance in coins") {
-                    for (item in controller.coinValues) {
+                    for (item in controller.tokenList) {
                         data(item.name, item.balance)
                     }
                 }
 
             }
-
             minWidth = 500.0
-
         }
     }
-
 }
 
 /**
@@ -60,15 +71,28 @@ class BalanceTableAndTotalBalanceView : View() {
         center = tableview(customViewModel.token) {
             readonlyColumn("Name", Token::name).fixedWidth(100)
             readonlyColumn("Symbol", Token::symbol).fixedWidth(80)
-            readonlyColumn("Value in ${controller.currencyName}", Token::valueInEuro).fixedWidth(130)
+            if(controller.usdIsUsed){
+                readonlyColumn("Price in Dollar", Token::priceInUSD).fixedWidth(130)
+                readonlyColumn("Balance in Dollar", Token::balanceInUSD).fixedWidth(110)
+            }
+            else {
+                readonlyColumn("Price in Euro", Token::priceInEUR).fixedWidth(130)
+                readonlyColumn("Balance in Euro", Token::balanceInEUR).fixedWidth(110)
+            }
             readonlyColumn("Balance", Token::balance).fixedWidth(80)
-            readonlyColumn("Balance in ${controller.currencyName}", Token::balanceInEuroOrUSD).fixedWidth(110)
+
             minWidth = 500.0
             paddingLeft = 10.0
         }
 
         bottom = stackpane {
-            label("total balance: ${controller.totalBalance} ${controller.currencyName}")
+            if(controller.usdIsUsed){
+                label("total balance: ${controller.totalBalance}$")
+            }
+            else {
+                label("total balance: ${controller.totalBalance}€")
+            }
+
             paddingAll = 20.0
         }
 
@@ -133,7 +157,7 @@ class CustomViewModel : ItemViewModel<Token>() {
             updateMessage("loading...")
             controller.refresh()
         } ui {
-            token.set(controller.coinValues.observable())
+            token.set(controller.tokenList.observable())
             mainView.root.replaceChildren(mainDisplayView)
         } fail {
             if (controller.inputFileNotFound) {
