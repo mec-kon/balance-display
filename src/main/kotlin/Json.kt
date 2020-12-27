@@ -57,7 +57,7 @@ class Json {
         for(token in tokenList){
             val jsonObject = getKlaxonJsonObject(apiLink+token.id)
             val price = jsonObject[token.id] as JsonObject
-            token.priceInEUR = price["eur"] as Double
+            token.priceInEUR = price["eur"].toString().toDouble()
         }
 
         return tokenList
