@@ -13,7 +13,7 @@ How it works
 This is a simple program written in kotlin using tornadofx.
 
 To make the program work, the user must specify the name and number of his coins in the "input.txt" file.
-With this information, the program calculates the user's balance using the website https://coinmarketcap.com/.
+With this information, the program calculates the user's balance using the website https://www.coingecko.com/.
 
 As build management automation tool gradle is used in this project.
 
